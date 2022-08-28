@@ -5,9 +5,28 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        .content-wrap {
+            top: 0;
+            left: 0;
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+    </style>
 </head>
 <body>
-    <h1>测试</h1>
+    <div class="content-wrap">
+        <canvas id="snake-world">
+            hello world
+        </canvas>
+    </div>
+
     <script type="text/javascript" src="./index.js"></script>
 </body>
 
