@@ -6,7 +6,7 @@ init().then(() => {
     const world = World.new(8); // 一个16 * 16 的世界
     const worldWidth = world.width();
     const fps = 5;
-    const canvas = document.getElementById("snake-world");
+    const canvas = <HTMLCanvasElement>document.getElementById("snake-world");
 
     const context = canvas.getContext("2d");
 
@@ -27,7 +27,6 @@ init().then(() => {
 
         }
 
-        
         context.stroke();
         
     }
