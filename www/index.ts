@@ -1,9 +1,10 @@
 import init, { World } from "wasm_game";
+import { random } from "./util/random";
 
-init().then(() => {
+init().then((wasm) => {
     const CELL_SIZE = 20; // 定义一个格子的大小
     const WORLD_WIDTH = 8;
-    const SNAKE_HEAD_INDEX = Date.now() % (WORLD_WIDTH * WORLD_WIDTH);
+    const SNAKE_HEAD_INDEX = random(WORLD_WIDTH * WORLD_WIDTH);
     const world = World.new(WORLD_WIDTH, SNAKE_HEAD_INDEX); // 一个16 * 16 的世界, 蛇的位置在SNAKE_HEAD_INDEX
     const worldWidth = world.width();
     const fps = 5;
@@ -33,12 +34,36 @@ init().then(() => {
 
     // 画蛇头
     function drawSnake() {
-        const snake_index = world.snake_head_index();
-        const row = Math.floor(snake_index / worldWidth);
-        const col = snake_index % worldWidth;
 
+        const snakeCells = new Uint32Array(
+            wasm.memory.buffer,
+            world.snake_cells(), // 指针
+            world.snake_length(), // 长度
+        ); // 用unit32Array接收原生指针
+
+        snakeCells.forEach((cell, i) => {
+            const col = cell % worldWidth;
+            const row = Math.floor(cell / worldWidth);
+            context.beginPath();
+            // 蛇头与蛇身区分颜色
+            i == 0 ? context.fillStyle = '#787878' : context.fillStyle = '#000000';
+            
+            context.fillRect(
+                col * CELL_SIZE, // x
+                row * CELL_SIZE, // y
+                CELL_SIZE,
+                CELL_SIZE
+            );
+        });
+        context.stroke();
+    }
+    // 画一个蛋
+    function drawReward() {
+        const index = world.reward_cell();
+        const row = Math.floor(index / worldWidth);
+        const col = index % worldWidth;
         context.beginPath();
-
+        context.fillStyle = "#ff0000"; // 给蛋的颜色设置成红色
         context.fillRect(
             col * CELL_SIZE, // x
             row * CELL_SIZE, // y
@@ -54,6 +79,8 @@ init().then(() => {
     function draw() {
         drawWorld();
         drawSnake();
+        
+        drawReward();
     }
 
     function run() {

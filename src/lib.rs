@@ -9,6 +9,10 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 extern "C" {
     pub fn alert(s: &str);
 }
+#[wasm_bindgen(module = "/www/util/random.ts")]
+extern {
+    fn random(max: usize) -> usize; // 导入js的函数
+}
 
 #[wasm_bindgen]
 pub fn hello(name: &str) {
@@ -30,10 +34,12 @@ pub struct World {
     // 两个参数的类型都是usize类型(无符号整型数据，位数大小由操作系统决定，比如我的电脑是64位的，那usize就占有64bit)
     width: usize,
     size: usize,
+    reward_cell: usize,
     snake: Snake,
+    
 }
 #[wasm_bindgen]
-struct SnakeCell(usize);
+pub struct SnakeCell(usize);
 #[wasm_bindgen]
 struct Snake {
     body: Vec<SnakeCell>,
@@ -43,11 +49,16 @@ struct Snake {
 #[wasm_bindgen]
 impl Snake {
     /**
-      * spawn_index 初始点位
+      * spawn_index 蛇头初始点位
+      * size 蛇身大小(包含蛇头)
       */
-    fn new(spawn_index: usize) -> Self {
+    fn new(spawn_index: usize, size: usize) -> Self {
+        let mut body = Vec::new();
+        for i in 0..size {
+            body.push(SnakeCell(spawn_index - i));
+        }
         Self {
-            body: vec![SnakeCell(spawn_index)],
+            body: body,
             direction: Direction::Down,
         }
     }
@@ -56,10 +67,13 @@ impl Snake {
 #[wasm_bindgen]
 impl World {
     pub fn new(width: usize, snake_index: usize) -> Self {
+        let size = width * width;
+        let snake = Snake::new(snake_index, 3);
         Self {
             width,
-            size: width * width, // 创建一个长宽相等的正方形
-            snake: Snake::new(snake_index), // 创建一条在13位置的蛇
+            size: size, // 创建一个长宽相等的正方形
+            snake: snake, // 创建一条在13位置的蛇
+            reward_cell: World::gen_reward_cell(size),
         }
     }
     pub fn width(&self) -> usize {
@@ -67,13 +81,23 @@ impl World {
     }
 
     pub fn snake_head_index(&self) -> usize {
-        // 不要写分号，不然报错
+        // 不要写分号，写了分号就不是return了
+        // 不写分号的语句会被return
         self.snake.body[0].0
     }
-
+    /**
+      * 改变蛇的运动方向
+      */
     pub fn change_snake_direction(&mut self, direction: Direction) {
         self.snake.direction = direction;
     }
+    /**
+      * 返回蛇身长度
+      */
+    pub fn snake_length(&self) -> usize {
+        self.snake.body.len()
+    }
+
     /**
       * 将数字映射到二维网格
       * 比如一个 8 * 8 的网格,行和列的下标都从0开始
@@ -94,6 +118,12 @@ impl World {
     pub fn set_snake_head(&mut self, index: usize) {
         self.snake.body[0].0 = index;
     }
+    // 拿到蛇身（的指针）
+    // 数组的指针也就是数组的头一个元素的指针
+    // 也就是蛇头位置的指针
+    pub fn snake_cells(&self) -> *const SnakeCell {
+        self.snake.body.as_ptr()
+    }
 
     pub fn update(&mut self) {
         let snake_head_index: usize = self.snake_head_index();
@@ -108,5 +138,14 @@ impl World {
 
         let next_index = self.cell_to_index(row, col);
         self.set_snake_head(next_index);
+    }
+    // 在随机位置生成一颗蛋
+    // 蛋和蛇身体不能重合
+    fn gen_reward_cell(max: usize) -> usize {
+        random(max)
+    }
+
+    pub fn reward_cell(&self) -> usize {
+        self.reward_cell
     }
 }
