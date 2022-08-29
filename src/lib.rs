@@ -32,15 +32,15 @@ pub struct World {
     size: usize,
     snake: Snake,
 }
-
+#[wasm_bindgen]
 struct SnakeCell(usize);
-
+#[wasm_bindgen]
 struct Snake {
     body: Vec<SnakeCell>,
     direction: Direction
 
 }
-
+#[wasm_bindgen]
 impl Snake {
     /**
       * spawn_index 初始点位
@@ -48,7 +48,7 @@ impl Snake {
     fn new(spawn_index: usize) -> Self {
         Self {
             body: vec![SnakeCell(spawn_index)],
-            // direction: Direction::Down,
+            direction: Direction::Down,
         }
     }
 }
@@ -80,13 +80,14 @@ impl World {
       * 那么数字13，就可以映射到这个网格的第1行，第4列 (1, 4)
       * (行, 列)
       */
-    pub fn index_to_cell(&self, index:usize) -> (usize, usize) {
+      // 不理解，这里为啥不能写成 pub fn index_to_cell
+    fn index_to_cell(&self, index: usize) -> (usize, usize) {
         (index / self.width, index % self.width)
     }
     /**
       * 将二维网格映射到一个数字
       */
-    pub fn cell_to_index(&self, row:usize, col: usize) -> usize {
+    fn cell_to_index(&self, row:usize, col: usize) -> usize {
         (row * self.width) + col
     }
 
@@ -101,7 +102,7 @@ impl World {
         let (row, col) = match self.snake.direction {
             Direction::Left => (row, (col - 1)%self.width),
             Direction::Right => (row, (col + 1)%self.width),
-            Direction::Top => ((row -1) % self.width, col), // 这里其实应该用self.height更容易理解，不过因为是width*width的网格，所以width和height值相等
+            Direction::Up => ((row -1) % self.width, col), // 这里其实应该用self.height更容易理解，不过因为是width*width的网格，所以width和height值相等
             Direction::Down => ((row + 1) % self.width, col),
         };
 
