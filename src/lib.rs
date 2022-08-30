@@ -28,25 +28,21 @@ pub enum Direction {
 }
 
 
-#[wasm_bindgen]
-pub struct World {
-    // 定义一个结构体，这个结构体包含两个参数，width和size
-    // 两个参数的类型都是usize类型(无符号整型数据，位数大小由操作系统决定，比如我的电脑是64位的，那usize就占有64bit)
-    width: usize,
-    size: usize,
-    reward_cell: usize,
-    snake: Snake,
-    
-}
-#[wasm_bindgen]
+
+#[derive(PartialEq, Clone, Copy)]
 pub struct SnakeCell(usize);
-#[wasm_bindgen]
+
 struct Snake {
     body: Vec<SnakeCell>,
     direction: Direction
 
 }
-#[wasm_bindgen]
+
+/**
+  * 蛇头在下一帧的位置，由Direction和当前位置决定。
+  * 蛇身在下一帧的位置，等于这一帧上一节身体的位置
+  */
+
 impl Snake {
     /**
       * spawn_index 蛇头初始点位
@@ -64,6 +60,19 @@ impl Snake {
     }
 }
 
+
+#[wasm_bindgen]
+pub struct World {
+    // 定义一个结构体，这个结构体包含两个参数，width和size
+    // 两个参数的类型都是usize类型(无符号整型数据，位数大小由操作系统决定，比如我的电脑是64位的，那usize就占有64bit)
+    width: usize,
+    size: usize,
+    reward_cell: usize,
+    snake: Snake,
+    next_cell: Option<SnakeCell>
+    
+}
+
 #[wasm_bindgen]
 impl World {
     pub fn new(width: usize, snake_index: usize) -> Self {
@@ -73,7 +82,9 @@ impl World {
             width,
             size: size, // 创建一个长宽相等的正方形
             snake: snake, // 创建一条在13位置的蛇
-            reward_cell: World::gen_reward_cell(size),
+            reward_cell: World::gen_reward_cell(size, &snake.body),
+            // reward_cell: World::gen_reward_cell(size),
+            next_cell: None
         }
     }
     pub fn width(&self) -> usize {
@@ -89,6 +100,13 @@ impl World {
       * 改变蛇的运动方向
       */
     pub fn change_snake_direction(&mut self, direction: Direction) {
+        // 正在向左 不能向右
+        // 并且正在向下，不能向上
+        let next_cell = self.gen_next_snake_cell(&direction);
+        if self.snake.body[1].0 == next_cell.0 {
+            return;
+        }
+        
         self.snake.direction = direction;
     }
     /**
@@ -126,24 +144,87 @@ impl World {
     }
 
     pub fn update(&mut self) {
-        let snake_head_index: usize = self.snake_head_index();
-        let (row, col) = self.index_to_cell(snake_head_index); // 拿到蛇头的行和列
 
-        let (row, col) = match self.snake.direction {
-            Direction::Left => (row, (col - 1)%self.width),
-            Direction::Right => (row, (col + 1)%self.width),
-            Direction::Up => ((row -1) % self.width, col), // 这里其实应该用self.height更容易理解，不过因为是width*width的网格，所以width和height值相等
-            Direction::Down => ((row + 1) % self.width, col),
-        };
+        let temp: Vec<SnakeCell> = self.snake.body.clone();
+        // 使用Option提高性能
+        match self.next_cell {
+            // 如果有值
+            Some(cell) => {
+                self.snake.body[0] = cell;
+                self.next_cell = None;
+            },
+            // 如果没有值
+            None => {
+                self.snake.body[0] = self.gen_next_snake_cell(&self.snake.direction);
+            }
+        }
+        let len = self.snake.body.len();
+        // 从1开始，因为0是蛇头
+        for i in 1..len {
+            self.snake.body[i] = SnakeCell(temp[i-1].0);
+        }
+    }
+    /**
+      * 蛇下一帧的位置
+      */
+    fn gen_next_snake_cell(&self, direction: &Direction) -> SnakeCell {
+        let snake_index = self.snake_head_index();
+        let row = snake_index / self.width;
 
-        let next_index = self.cell_to_index(row, col);
-        self.set_snake_head(next_index);
+        return match direction {
+            Direction::Up => {
+                // 上边界
+                let border_hold: usize = snake_index - ((self.width - row) * self.width);
+                if snake_index == border_hold {
+                    // 等于上边界，则从下边界穿透出来
+                    SnakeCell((self.size - self.width) + border_hold)
+                } else {
+                    SnakeCell(snake_index - self.width)
+                }
+            }
+            Direction::Down => {
+                // 下边界
+                let border_hold: usize = snake_index + ((self.width - row) * self.width);
+                if snake_index == border_hold {
+                    // 等于下边界，则从上边界穿透出来
+                    SnakeCell(border_hold - (row+1) * self.width)
+                } else {
+                    SnakeCell(snake_index + self.width)
+                }
+            }
+            Direction::Left => {
+                let border_hold: usize = row * self.width;
+                if snake_index == border_hold {
+                    SnakeCell(border_hold + self.width - 1)
+                } else {
+                    SnakeCell(snake_index - 1)
+                }
+            }
+            Direction::Right => {
+                let border_hold: usize =  (row + 1) * self.width;
+                if (snake_index + 1) == border_hold {
+                    SnakeCell(border_hold - self.width)
+                } else {
+                    SnakeCell(snake_index + 1)
+                }
+            }
+        }
     }
     // 在随机位置生成一颗蛋
     // 蛋和蛇身体不能重合
-    fn gen_reward_cell(max: usize) -> usize {
-        random(max)
+    fn gen_reward_cell(max: usize, snake_body: &Vec<SnakeCell>) -> usize {
+        let mut reward_cell;
+        loop {
+            reward_cell = random(max);
+            if !snake_body.contains(&SnakeCell(reward_cell)) {
+                break;
+            }
+        }
+        reward_cell
     }
+    // fn gen_reward_cell(max: usize) -> usize {
+    //     random(max)
+    // }
 
     pub fn reward_cell(&self) -> usize {
         self.reward_cell

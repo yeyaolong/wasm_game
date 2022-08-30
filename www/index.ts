@@ -1,4 +1,4 @@
-import init, { World } from "wasm_game";
+import init, { World, Direction } from "wasm_game";
 import { random } from "./util/random";
 
 init().then((wasm) => {
@@ -14,6 +14,27 @@ init().then((wasm) => {
 
     canvas.width = worldWidth * CELL_SIZE;
     canvas.height = worldWidth * CELL_SIZE;
+
+
+    document.addEventListener("keydown", e => {
+        switch(e.code) {
+            case "ArrowUp":
+                world.change_snake_direction(Direction.Up);
+                break;
+            case "ArrowDown":
+                world.change_snake_direction(Direction.Down);
+                break;
+            
+            case "ArrowLeft":
+                world.change_snake_direction(Direction.Left);
+                break;
+            case "ArrowRight":
+                world.change_snake_direction(Direction.Right);
+                break;
+                
+        }
+    })
+
     // 画一个16 * 16的网格
     function drawWorld() {
         context.beginPath();
