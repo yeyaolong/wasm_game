@@ -171,12 +171,11 @@ impl World {
                 // 蛇身体变长
                 self.snake.body.push(SnakeCell(self.snake.body[1].0)); // 移动第二个元素
             } else {
-                // 如果蛇身体与世界一样大了,游戏胜利
+                // 如果蛇身体与世界一样大了,游戏胜利，胜利的判断条件是 rewrd_cell = 123456789
                 self.reward_cell = 123456789;
             }
             
         }
-        // 如果
     }
     /**
       * 蛇下一帧的位置
