@@ -3,7 +3,7 @@ import { random } from "./util/random";
 
 init().then((wasm) => {
     const CELL_SIZE = 20; // 定义一个格子的大小
-    const WORLD_WIDTH = 8;
+    const WORLD_WIDTH = 16;
     const SNAKE_HEAD_INDEX = random(WORLD_WIDTH * WORLD_WIDTH);
     const world = World.new(WORLD_WIDTH, SNAKE_HEAD_INDEX); // 一个16 * 16 的世界, 蛇的位置在SNAKE_HEAD_INDEX
     const worldWidth = world.width();
@@ -31,7 +31,6 @@ init().then((wasm) => {
             case "ArrowRight":
                 world.change_snake_direction(Direction.Right);
                 break;
-                
         }
     })
 
@@ -94,6 +93,10 @@ init().then((wasm) => {
 
 
         context.stroke();
+
+        if (index === 123456789) {
+            alert("Won")
+        }
     }
 
 

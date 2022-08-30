@@ -84,7 +84,6 @@ impl World {
             // snake: snake, // 创建一条在13位置的蛇, 不能定义在这里
             reward_cell: World::gen_reward_cell(size, &snake.body),
             snake: snake, // 创建一条在13位置的蛇, // 必须写在reward_cell下面
-            // reward_cell: World::gen_reward_cell(size),
             next_cell: None
         }
     }
@@ -164,6 +163,20 @@ impl World {
         for i in 1..len {
             self.snake.body[i] = SnakeCell(temp[i-1].0);
         }
+        // 蛇头碰到了，说明吃到了
+        if self.reward_cell == self.snake_head_index() {
+            if self.snake_length() < self.size {
+                // 重新生成一个蛋
+                self.reward_cell = World::gen_reward_cell(self.size, &self.snake.body);
+                // 蛇身体变长
+                self.snake.body.push(SnakeCell(self.snake.body[1].0)); // 移动第二个元素
+            } else {
+                // 如果蛇身体与世界一样大了,游戏胜利
+                self.reward_cell = 123456789;
+            }
+            
+        }
+        // 如果
     }
     /**
       * 蛇下一帧的位置
@@ -188,7 +201,7 @@ impl World {
                 let border_hold: usize = snake_index + ((self.width - row) * self.width);
                 if snake_index == border_hold {
                     // 等于下边界，则从上边界穿透出来
-                    SnakeCell(border_hold - (row+1) * self.width)
+                    SnakeCell(border_hold - (row * self.width))
                 } else {
                     SnakeCell(snake_index + self.width)
                 }
