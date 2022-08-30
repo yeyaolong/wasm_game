@@ -81,8 +81,9 @@ impl World {
         Self {
             width,
             size: size, // 创建一个长宽相等的正方形
-            snake: snake, // 创建一条在13位置的蛇
+            // snake: snake, // 创建一条在13位置的蛇, 不能定义在这里
             reward_cell: World::gen_reward_cell(size, &snake.body),
+            snake: snake, // 创建一条在13位置的蛇, // 必须写在reward_cell下面
             // reward_cell: World::gen_reward_cell(size),
             next_cell: None
         }
