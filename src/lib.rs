@@ -14,6 +14,11 @@ extern {
     fn random(max: usize) -> usize; // 导入js的函数
 }
 
+#[wasm_bindgen(module = "/www/util/log.ts")]
+extern {
+    fn log(txt: &str); // 导入js的函数
+    fn error(txt: &str);
+}
 #[wasm_bindgen]
 pub fn hello(name: &str) {
     alert(name);
@@ -187,8 +192,16 @@ impl World {
         return match direction {
             Direction::Up => {
                 // 上边界
+                // 蛇头距离最后一个格子的距离
+                // = 蛇头所在位置 - （（网格总高度 - 蛇头所在行) * 网格总宽度）
+                // 比如蛇的位置是7，网格总高度 =8，网格总宽度 =8， 那么蛇就在第0行，
+                // 7 -（(8 - 0) * 8） = 7-64 = -57
                 let border_hold: usize = snake_index - ((self.width - row) * self.width);
+                
                 if snake_index == border_hold {
+                // if row == 0 {
+                    log(&border_hold.to_string());
+                    log(&snake_index.to_string());
                     // 等于上边界，则从下边界穿透出来
                     SnakeCell((self.size - self.width) + border_hold)
                 } else {
@@ -197,6 +210,10 @@ impl World {
             }
             Direction::Down => {
                 // 下边界
+                // 蛇头距离最后一个格子的距离
+                // = 蛇头所在位置 + （（网格总高度 - 蛇头所在行) * 网格总宽度）
+                // 比如蛇的位置是57，网格总高度 =8，网格总宽度 =8， 那么蛇就在第7行，
+                // 57 +（(8 - 7) * 8） = 57+8 = 65
                 let border_hold: usize = snake_index + ((self.width - row) * self.width);
                 if snake_index == border_hold {
                     // 等于下边界，则从上边界穿透出来
